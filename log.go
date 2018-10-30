@@ -1,8 +1,8 @@
 package logs
 
 import (
-	"conf"
 	"fmt"
+	"github.com/ssrs100/conf"
 	"os"
 	"path"
 	"path/filepath"
