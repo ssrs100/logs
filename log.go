@@ -81,17 +81,29 @@ func Register(name string, log loggerType) {
 	adapters[name] = log
 }
 
+
 //创建LOGGER实例，默认为DEBUG级别
 func newLogger() *Logger {
 	logger := Logger{}
 	basedir := os.Getenv("APP_BASE_DIR")
-	logFile := filepath.Join(basedir, "conf", "log4g.json")
-	config := conf.LoadFile(logFile)
-	pattern := config.GetString("pattern")
-	param := config.GetJson()
-	if err := logger.setLogger(pattern, param); err != nil {
-		fmt.Println("set log failed. err:", err)
+	if len(basedir) > 0 {
+		logFile := filepath.Join(basedir, "conf", "log4g.json")
+		_, err := os.Stat(logFile)
+		if err == nil || os.IsExist(err) {
+			config := conf.LoadFile(logFile)
+			pattern := config.GetString("pattern")
+			param := config.GetJson()
+			if err := logger.setLogger(pattern, param); err != nil {
+				fmt.Println("set log failed. err:", err)
+			}
+		} else {
+			loadDefault(&logger)
+		}
+
+	} else {
+		loadDefault(&logger)
 	}
+
 	logger.EnableFuncCallDepth(true)
 	logger.SetLogFuncCallDepth(2)
 
@@ -100,6 +112,13 @@ func newLogger() *Logger {
 	logger.msgChan = make(chan *logMsg, 10000)
 	logger.signalChan = make(chan string, 1)
 	return &logger
+}
+
+func loadDefault(logger *Logger) {
+	param := "{\"logLevel\":\"DEBUG\"}"
+	if err := logger.setLogger("console", param); err != nil {
+		fmt.Println("set log failed. err:", err)
+	}
 }
 
 func GetLogger() *Logger {
